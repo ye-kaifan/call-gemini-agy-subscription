@@ -1,4 +1,4 @@
-# Rewrite Replies with Your Gemini Subscription
+# Say Again Using Gemini Subscription
 
 用 Google Antigravity CLI（`agy`）的订阅额度帮 Codex 重写中文最终回复。你点名后，订阅模型会结合原始问题、回复草稿和本轮产物重新组织答案，Codex 再核对数字、公式、代码、路径和结论。
 
@@ -10,8 +10,8 @@
 
 ```sh
 mkdir -p "$HOME/.agents/skills"
-git clone https://github.com/ye-kaifan/gemini-rewrite-with-subscription-quota.git \
-  "$HOME/.agents/skills/gemini-rewrite-with-subscription-quota"
+git clone https://github.com/ye-kaifan/say-again-using-gemini-subscription.git \
+  "$HOME/.agents/skills/say-again-using-gemini-subscription"
 ```
 
 默认沿用 `agy` 当前的模型，额外付费点数已关闭。若要固定模型，用 `agy models` 查看候选标识，把订阅可用的模型标识单独写在本目录的 `model.txt` 中。
@@ -21,10 +21,10 @@ git clone https://github.com/ye-kaifan/gemini-rewrite-with-subscription-quota.gi
 收到回答后，可以单独发一条消息，让 Codex 重写上一条完整回答。
 
 ```text
-$gemini-rewrite-with-subscription-quota
+$say-again-using-gemini-subscription
 ```
 
-也可以在布置任务时点名，例如「跑完测试后，用 `$gemini-rewrite-with-subscription-quota` 根据代码改动和测试结果整理最终回复」。桌面端技能列表中的显示名是 **Rewrite Replies with Your Gemini Subscription**。
+也可以在布置任务时点名，例如「跑完测试后，用 `$say-again-using-gemini-subscription` 根据代码改动和测试结果整理最终回复」。桌面端技能列表中的显示名是 **Say Again Using Gemini Subscription**。
 
 ## 哪些内容会发给模型
 

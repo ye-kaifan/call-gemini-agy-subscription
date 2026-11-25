@@ -1,11 +1,11 @@
 ---
-name: gemini-rewrite-with-subscription-quota
+name: say-again-using-gemini-subscription
 description: 用户显式调用时，通过本机 agy 使用订阅额度，根据任务产物重撰中文最终回复，由 Codex 核对后交付。
 ---
 
 # 重撰中文最终回复
 
-任务中点名 `$gemini-rewrite-with-subscription-quota`，就先完成任务、写好原稿。若用户单独发来技能名，直接用上一条完整回答作原稿，沿用当时的需求和已核实的结果。
+任务中点名 `$say-again-using-gemini-subscription`，就先完成任务、写好原稿。若用户单独发来技能名，直接用上一条完整回答作原稿，沿用当时的需求和已核实的结果。
 
 从任务工作区调用脚本。下例的 `SKILL_DIR` 指本文件所在目录。若宿主限制嵌套沙箱，按其审批流程启动脚本。把三段材料按原文写入标准输入，LaTeX 和代码可直接粘贴。
 
