@@ -1,0 +1,7 @@
+interface:
+  display_name: "Rewrite Replies with Your Gemini Subscription"
+  short_description: "使用订阅额度，结合本轮产物重撰中文最终回复，由 Codex 核对事实。"
+  default_prompt: "请用 $gemini-rewrite-with-subscription-quota 根据本轮产物重撰最终回复。"
+
+policy:
+  allow_implicit_invocation: false
