@@ -9,7 +9,7 @@ description: 用户点名时，经本机 agy 调用订阅版 Gemini，直接对�
 
 ## 调用与续谈
 
-前提：Python 3.10+，官方 `agy` 已安装并登录订阅账号；查询历史还需本机可执行的 `codex` CLI。
+前提：Python 3.10+，官方 `agy` 已安装并登录可用的 Google 账号；查询历史还需本机可执行的 `codex` CLI。首次安装、未登录或依赖缺失时，按 [README.md](README.md#让-codex-帮你安装)完成配置与验证。
 
 `SKILL_DIR` 指本技能目录。为当前 Codex 聊天选择独立的 `SESSION_DIR`，放在本地输出目录，避免公开提交。首次指定实际项目根目录：
 
@@ -34,7 +34,7 @@ MESSAGE
 
 ## 选项与历史
 
-指定项目可供 Gemini 读写和运行命令。默认使用 agy 的 `auto` 模式及终端沙箱；先讨论方案可用 `--execution-mode plan`。用 `--model` 指定 Gemini 模型；未指定时沿用会话或本机选择。调用使用订阅登录并关闭额外 AI 点数。完整参数及模型选择顺序见 [README.md](README.md#脚本选项)。
+指定项目可供 Gemini 读写和运行命令。默认使用 agy 的 `auto` 模式及终端沙箱；先讨论方案可用 `--execution-mode plan`。用 `--model` 指定 Gemini 模型；未指定时沿用会话或本机选择。调用使用 Google 账号额度并关闭额外 AI 点数。完整参数及模型选择顺序见 [README.md](README.md#脚本选项)。
 
 查历史时，将会话 ID、关键词或项目范围交给 Gemini。默认查询本机各项目未归档交互会话中的用户消息和助手最终回复。需要归档、分页或排查历史工具问题时，见 [references/history.md](references/history.md)。首轮可用 `--codex-home` 指定历史目录，或用 `--no-history` 关闭历史工具。
 
