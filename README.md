@@ -4,7 +4,7 @@
 
 ## 安装
 
-需要 macOS 或 Linux、Python 3.10+，以及已安装并登录订阅账号的官方 `agy`。将本仓库放到 Codex 技能目录：
+需要 macOS 或 Linux、Python 3.10+，以及已安装并登录订阅账号的官方 `agy`。历史查询还需本机 `codex` CLI，验证版本为 `0.164.0`。将本仓库放到 Codex 技能目录：
 
 ```sh
 git clone https://github.com/ye-kaifan/call-gemini-agy-subscription.git \
@@ -51,13 +51,13 @@ MESSAGE
 
 ## Codex 历史读取
 
-`history.py` 直接只读查询 Codex 的本地 SQLite 索引和历史正文，并提供列表、全文关键词搜索、按 ID 读取及分页。默认包含全部项目、普通和归档会话、子代理等来源。支持旧 JSONL、压缩 JSONL 和新版 SQLite 分页历史。
+`history.py` 通过本机 Codex app-server 查询历史，提供列表、正文关键词搜索、按 ID 读取及分页。默认列出各项目未归档的 CLI、IDE 和桌面交互会话；正文保留用户消息与助手最终回复。归档按需查询，列表和搜索不包含子代理与后台执行来源。
 
 `history.py` 是本技能实现的本地读取程序。`call.py` 在会话目录的 `.agents/mcp_config.json` 中将它注册为 `codex-history` 服务，再通过 `--add-dir` 将该目录加入 agy 工作区。Gemini 选择查询工具，agy 调用这个 Python 程序，将查询结果交回 Gemini。
 
-普通 JSONL 和 SQLite 只需 Python 标准库。压缩 JSONL 需要 Python 3.14 的 `compression.zstd`、`zstandard` 模块或 `zstd` 命令之一；缺少解码器时会明确报出未覆盖范围。其他设备、纯云端或已删除记录不在本机读取范围。[详细说明](references/history.md)
+查询时按需启动 `codex app-server`，通过标准输入输出通信，结束时回收进程。技能调用历史查询接口，不恢复 Codex 会话或启动模型回答。存储格式由 Codex 处理。若 `codex` 不在 PATH，可将环境变量 `CODEX_HISTORY_BIN` 设为 CLI 的绝对路径；不需要保持 Codex 桌面窗口打开。[详细说明](references/history.md)
 
-实现使用 agy 官方的 [MCP 工作区配置](https://antigravity.google/docs/mcp/)。项目操作使用其[执行模式](https://antigravity.google/docs/cli/modes/)，并保留 CLI 自身的权限处理。
+实现使用 agy 官方的 [MCP 工作区配置](https://antigravity.google/docs/mcp/)和 Codex 的 [app-server 查询接口](https://developers.openai.com/codex/app-server)。项目操作使用 agy 的[执行模式](https://antigravity.google/docs/cli/modes/)，并保留 CLI 自身的权限处理。
 
 ## 回执与失败恢复
 
@@ -72,4 +72,4 @@ python3 -B -m unittest discover -s tests -v
 python3 -B scripts/build_package.py
 ```
 
-测试只使用合成历史与模拟 CLI，涵盖长消息分页、全文搜索、归档、压缩历史、源数据只读、会话续谈、并发锁、错误回执和中断回收。真实调用使用虚构项目另行验证，不把用户聊天或账号信息作为验收材料。
+离线测试使用模拟 app-server 和 agy，涵盖交互信息筛选、长消息分页、正文搜索、归档、接口错误、进程回收、会话续谈及并发锁。真实 Codex CLI 与 Gemini 联调使用合成会话和虚构项目，不把用户聊天或账号信息作为验收材料。

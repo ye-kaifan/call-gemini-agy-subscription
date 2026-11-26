@@ -9,7 +9,7 @@ description: 用户点名时，经本机 agy 调用订阅版 Gemini，直接对�
 
 ## 调用与续谈
 
-前提：Python 3.10+，官方 `agy` 已安装并登录订阅账号。压缩历史的解码依赖见 [历史读取说明](references/history.md)。
+前提：Python 3.10+，官方 `agy` 已安装并登录订阅账号；查询历史还需本机可执行的 `codex` CLI。
 
 为当前 Codex 聊天选择独立的 `SESSION_DIR`，放在任务的本地输出目录，避免进入公开仓库。首次指定实际项目根目录：
 
@@ -40,9 +40,9 @@ MESSAGE
 
 ## Codex 历史
 
-`call.py` 将技能中的历史读取脚本 `history.py` 注册为名为 `codex-history` 的本地 MCP 服务，供 Gemini 查询。它提供会话列表、正文搜索和按 ID 读取三个工具。
+`call.py` 将技能中的 `history.py` 注册为名为 `codex-history` 的本地 MCP 服务。它经 Codex app-server 提供会话列表、正文搜索和按 ID 读取三个工具。
 
-需要查历史时，将用户给出的 ID、关键词或项目范围交给 Gemini。默认涵盖本机各项目、普通和归档会话及所有来源；正文搜索不局限于标题。长消息和搜索结果可继续分页。详细能力、文件格式和边界见 [references/history.md](references/history.md)。
+需要查历史时，将用户给出的 ID、关键词或项目范围交给 Gemini。默认列出各项目未归档的交互会话，正文保留用户消息和助手最终回复；归档按需查询。正文搜索不局限于标题，长消息和搜索结果可继续分页。工具参数与接口要求见 [references/history.md](references/history.md)。
 
 默认历史位置为 `CODEX_HOME`，未设置时使用 `~/.codex`。可在首轮用 `--codex-home` 指定本地数据目录，或用 `--no-history` 不加载内置历史工具。不要把整个历史库复制到提示词；按用户任务查询。其他设备或云端尚未落盘的内容不可凭空读取。
 

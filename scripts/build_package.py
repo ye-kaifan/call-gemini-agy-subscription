@@ -13,7 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 FILES = (
     ".gitignore", "SKILL.md", "README.md", "agents/openai.yaml",
     "references/history.md", "scripts/agy_runtime.py", "scripts/call.py", "scripts/history.py",
-    "scripts/build_package.py", "tests/test_call.py", "tests/test_history.py",
+    "scripts/app_server.py", "scripts/build_package.py", "tests/test_call.py",
+    "tests/test_history.py", "tests/test_app_server.py",
 )
 
 
