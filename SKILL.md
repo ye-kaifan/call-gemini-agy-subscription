@@ -1,6 +1,6 @@
 ---
 name: call-gemini-agy-subscription
-description: 用户点名时，经本机 agy 调用订阅版 Gemini，直接对话、连续协作、操作项目，并用技能自带工具查询本机 Codex 历史；无需其他 skill 或历史插件。
+description: 用户点名时，经本机 agy 调用订阅版 Gemini，直接对话、连续协作、操作项目，并查询本机 Codex 历史。
 ---
 
 # 通过 agy 调用 Gemini 订阅
@@ -9,12 +9,13 @@ description: 用户点名时，经本机 agy 调用订阅版 Gemini，直接对�
 
 ## 调用与续谈
 
-前提：Python 3.10+，官方 `agy` 已安装并登录订阅账号。技能自带历史读取器，无需安装其他 skill、Codex 历史插件或常驻服务。压缩历史的可选解码依赖见 [历史读取说明](references/history.md)。
+前提：Python 3.10+，官方 `agy` 已安装并登录订阅账号。压缩历史的解码依赖见 [历史读取说明](references/history.md)。
 
 为当前 Codex 聊天选择独立的 `SESSION_DIR`，放在任务的本地输出目录，避免进入公开仓库。首次指定实际项目根目录：
 
 ```sh
-python3 "$SKILL_DIR/scripts/call.py"   --session "$SESSION_DIR" --workspace "$PROJECT_DIR" <<'MESSAGE'
+python3 "$SKILL_DIR/scripts/call.py" \
+  --session "$SESSION_DIR" --workspace "$PROJECT_DIR" <<'MESSAGE'
 请查一下这个问题以前在哪条 Codex 会话中讨论过，再结合当前代码给出建议。
 MESSAGE
 ```
@@ -33,13 +34,13 @@ MESSAGE
 
 ## 项目和模型
 
-整个指定项目加入 agy 工作区，可读取、编辑、新建文件和运行命令、测试。默认使用 agy 的 `auto` 模式及其终端沙箱；账号或平台不支持时，以实际诊断为准。需要先分析方案时可用 `--execution-mode plan`。用户要求只读、先讨论或仅重写时，明确传递这个限制；本入口不是旧版的操作系统级只读重写沙箱。
+整个指定项目加入 agy 工作区，可读取、编辑、新建文件和运行命令、测试。默认使用 agy 的 `auto` 模式及其终端沙箱；账号或平台不支持时，以实际诊断为准。需要先分析方案时可用 `--execution-mode plan`。用户要求只读、先讨论或仅重写时，明确传递这个限制。
 
 模型依次取本次 `--model`、会话已有模型、技能目录个人 `model.txt`、agy 当前模型。脚本在发送前校验 Gemini 模型名，使用订阅登录，关闭额外 AI 点数，不改用户的全局模型选择。
 
 ## Codex 历史
 
-本次 Gemini 主 agent 自带 `codex-history` 只读工具，由技能内 `history.py` 提供。它使用 agy 原生 MCP 通信，但不依赖 `local-codex-context` 或任何已安装插件；配置只放在本次会话目录。
+`call.py` 将技能中的历史读取脚本 `history.py` 注册为名为 `codex-history` 的本地 MCP 服务，供 Gemini 查询。它提供会话列表、正文搜索和按 ID 读取三个工具。
 
 需要查历史时，将用户给出的 ID、关键词或项目范围交给 Gemini。默认涵盖本机各项目、普通和归档会话及所有来源；正文搜索不局限于标题。长消息和搜索结果可继续分页。详细能力、文件格式和边界见 [references/history.md](references/history.md)。
 

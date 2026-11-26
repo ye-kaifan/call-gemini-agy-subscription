@@ -1,6 +1,6 @@
 interface:
   display_name: "调用 Gemini 订阅（agy）"
-  short_description: "经 agy 与订阅版 Gemini 对话、协作和续谈，自带 Codex 历史读取，无需其他插件。"
+  short_description: "经 agy 与订阅版 Gemini 对话、协作和续谈，按需查询本机 Codex 历史。"
   default_prompt: "请用 $call-gemini-agy-subscription 让 Gemini 看看当前项目，告诉我它是做什么的。"
 
 policy:
