@@ -1,10 +1,10 @@
 # Codex 交互历史
 
-`history.py` 是本技能提供的查询程序，通过本机 `codex app-server` 获取历史。`call.py` 将它注册为名为 `codex-history` 的 MCP 服务，供 Gemini 使用。
+`codex-history` 是本技能提供给 Gemini 的 MCP 服务，由 `history.py` 通过本机 Codex app-server 查询历史。
 
 ## 查询工具
 
-- `list_codex_threads`：列出 CLI、IDE 和桌面交互会话，默认跨项目、未归档；支持 `title` 标题子串、`project` 项目路径子串、`archive=active/archived/all`。无标题时使用会话预览。
+- `list_codex_threads`：列出 CLI、IDE 和桌面交互会话，默认跨项目、未归档；支持 `title` 标题子串、`project` 项目路径子串、`archive=active/archived/all`。
 - `search_codex_history`：以 `query` 搜索交互正文，支持同样的范围筛选；不局限于标题。
 - `read_codex_thread`：以 `thread_id` 直接读取指定会话，按时间从旧到新返回。
 
@@ -18,13 +18,13 @@
 
 ## 本机要求与边界
 
-需要支持 `thread/list`、`thread/read` 以及历史分页接口的 Codex CLI；已验证 `0.164.0`。默认从 PATH 找到 `codex`，可用 `CODEX_HISTORY_BIN=/absolute/path/to/codex` 指定其他版本。接口缺失时更新 CLI，不修改数据库来绕过错误。
+默认从 PATH 查找 `codex`，也可用 `CODEX_HISTORY_BIN=/absolute/path/to/codex` 指定可执行文件。若提示历史查询接口不受支持，更新 Codex CLI。
 
-历史目录由首轮 `--codex-home` 决定，缺省为 `CODEX_HOME` 或 `~/.codex`。查询程序按需启动 stdio app-server，并在进程结束时关闭它；不需要打开桌面窗口，也不需要监听网络端口。
+历史目录由首轮 `--codex-home` 决定，缺省为 `CODEX_HOME` 或 `~/.codex`；不需要打开 Codex 桌面窗口。
 
-技能只调用会话查询接口，不创建、恢复或删除会话，不启动 Codex 模型回答。app-server 自身可能维护索引和日志，因此这不等同于对整个历史目录施加文件系统只读限制。
+历史工具只查询会话，不触发 Codex 模型回答；app-server 自身可能维护本地索引和日志。
 
-存储格式由 Codex 处理：新版使用消息分页，旧版使用完整轮次分页。正文搜索逐批查询这些消息，没有另建持久索引。范围限于本机 app-server 能读取的会话；其他设备、尚未同步、已删除或尚未保存的信息不保证可用。
+查询范围限于本机已保存的会话；未同步或已删除的信息不保证可用。
 
 ## 无需 Gemini 的检查
 
@@ -36,4 +36,4 @@ python3 scripts/history.py search --args '{"query":"关键词"}'
 python3 scripts/history.py read --args '{"thread_id":"会话 UUID","max_chars":24000}'
 ```
 
-自定义历史目录时，在操作名前加 `--home /path/to/codex-home`。这与 Gemini 使用的是同一程序。调试和验收使用合成数据，不把真实历史输出收入公开测试、安装包或 Git 提交。
+自定义历史目录时，在操作名前加 `--home /path/to/codex-home`。
