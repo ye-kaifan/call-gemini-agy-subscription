@@ -1,7 +1,7 @@
 interface:
-  display_name: "Say Again Using Gemini Subscription"
-  short_description: "使用订阅额度，结合本轮产物重撰中文最终回复，由 Codex 核对事实。"
-  default_prompt: "请用 $say-again-using-gemini-subscription 根据本轮产物重撰最终回复。"
+  display_name: "调用 Gemini 订阅（agy）"
+  short_description: "通过 Antigravity 转达消息，让 Gemini 操作项目、查阅 Codex 历史或重撰回复。"
+  default_prompt: "请用 $call-gemini-agy-subscription 让 Gemini 看看当前项目，告诉我它是做什么的。"
 
 policy:
   allow_implicit_invocation: false
