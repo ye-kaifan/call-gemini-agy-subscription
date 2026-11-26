@@ -12,9 +12,8 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 FILES = (
     ".gitignore", "SKILL.md", "README.md", "agents/openai.yaml",
-    "references/history.md", "scripts/agy_runtime.py", "scripts/relay.py",
-    "scripts/rewrite.py", "scripts/reader.md", "scripts/readonly.sb",
-    "scripts/build_package.py", "tests/test_runtime.py", "tests/test_rewrite.py",
+    "references/history.md", "scripts/agy_runtime.py", "scripts/call.py", "scripts/history.py",
+    "scripts/build_package.py", "tests/test_call.py", "tests/test_history.py",
 )
 
 

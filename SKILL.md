@@ -1,61 +1,54 @@
 ---
 name: call-gemini-agy-subscription
-description: 用户点名时，通过本机 Antigravity CLI 与订阅版 Gemini 对话、续谈、委托项目任务或查询 Codex 历史，也支持重撰 GPT 已有回复。
+description: 用户点名时，经本机 agy 调用订阅版 Gemini，直接对话、连续协作、操作项目，并用技能自带工具查询本机 Codex 历史；无需其他 skill 或历史插件。
 ---
 
 # 通过 agy 调用 Gemini 订阅
 
-把用户的问题或任务直接交给 Gemini，无需 GPT 先作答。用户指定了原话就保留原文；必要的项目路径、指代对象、已有结果和本轮限制另起一段补充。用户明确要求重写已有回答，或在完整回答后单独发送技能名时，使用下面的只读重撰入口。
+将用户的问题或任务交给 Gemini，再把它的实际回复带回当前 Codex 聊天。无需 GPT 先写一份答案。保留用户原话；必要的项目路径、指代对象、已验证结果和本轮限制另起一段补充。重写、审查、解释和项目操作均使用同一个入口，按本轮要求决定工作范围。
 
-## 转达与续谈
+## 调用与续谈
 
-将 `SKILL_DIR` 换成当前技能目录，`PROJECT_DIR` 换成用户的项目根目录。为当前 Codex 聊天选择专属的回执目录，每轮使用一个不存在的新文件；不要让多个聊天共用“最后一次会话”文件。
+前提：Python 3.10+，官方 `agy` 已安装并登录订阅账号。技能自带历史读取器，无需安装其他 skill、Codex 历史插件或常驻服务。压缩历史的可选解码依赖见 [历史读取说明](references/history.md)。
+
+为当前 Codex 聊天选择独立的 `SESSION_DIR`，放在任务的本地输出目录，避免进入公开仓库。首次指定实际项目根目录：
 
 ```sh
-python3 "$SKILL_DIR/scripts/relay.py" \
-  --workspace "$PROJECT_DIR" --receipt "$TURN_RECEIPT" <<'MESSAGE'
-请看这个项目的测试，找出失败原因。先告诉我原因。
+python3 "$SKILL_DIR/scripts/call.py"   --session "$SESSION_DIR" --workspace "$PROJECT_DIR" <<'MESSAGE'
+请查一下这个问题以前在哪条 Codex 会话中讨论过，再结合当前代码给出建议。
 MESSAGE
 ```
 
-纯聊天用 `--no-project` 代替 `--workspace`。输入上限 512 KiB；长材料通过具体文件或历史 ID 按需读取。两个入口的模型选择顺序都是 `--model`、技能目录 `model.txt`、`agy` 当前选项，发消息前检查必须是 Gemini；均关闭额外 AI 点数和 API-key 调用入口。
-
-接着问同一个 Gemini 对话时，优先使用上轮回执，保留原来的项目参数：
+继续同一个 Gemini 会话时，只需沿用同一个目录：
 
 ```sh
-python3 "$SKILL_DIR/scripts/relay.py" \
-  --workspace "$PROJECT_DIR" --resume-receipt "$PREVIOUS_RECEIPT" \
-  --receipt "$NEXT_RECEIPT" <<'MESSAGE'
-继续按刚才的方案修复并运行测试。
+python3 "$SKILL_DIR/scripts/call.py" --session "$SESSION_DIR" <<'MESSAGE'
+继续按刚才的方案修改并运行测试。
 MESSAGE
 ```
 
-`--resume-receipt` 核对工作区和历史服务，沿用会话 ID、模型与执行模式；明确要求更换时加 `--model` 或 `--execution-mode`。旧的 `--conversation ID` 仍可用，但调用前须自己确认原工作区。独立话题或换项目新开对话。同一 Gemini 会话串行调用。
+脚本自动保存并沿用会话 ID、项目、模型和历史来源，每轮创建新回执，不覆盖旧记录。同一目录不可并发调用；不同 Codex 聊天、独立话题或更换项目使用新目录。首次纯聊天用 `--no-project`，此后仍可直接沿用该会话目录。
 
-转达使用官方 `auto` 模式和终端沙箱，可编辑项目、执行命令并评估需要额外权限的安全操作。需要保留原先仅自动执行沙箱内命令的行为时用 `--execution-mode accept-edits`。用户要求只读或先讨论时，须把限制明确传给 Gemini。转达入口不是只读入口。无界面 CLI 无法获得的确认会被拒绝，不会自动转交给 Codex 的审批弹窗。
+输入上限 512 KiB。大材料交给 Gemini 按需读取项目文件或历史。默认总时限 600 秒，长任务可用 `--timeout` 调整。
 
-成功后原样发送标准输出中的 Gemini 正文。回执保存会话 ID、模型、工具状态、参数、输出、错误及原始回复。涉及操作时，用这些证据和项目现场核对完成情况；退出码为零或 `result.status=SUCCESS` 不足以证明任务完成。失败、超时或中断后先检查回执及已有修改，不能自动重跑整项任务。必要的诊断单独说明。
+## 项目和模型
 
-## 查询 Codex 历史
+整个指定项目加入 agy 工作区，可读取、编辑、新建文件和运行命令、测试。默认使用 agy 的 `auto` 模式及其终端沙箱；账号或平台不支持时，以实际诊断为准。需要先分析方案时可用 `--execution-mode plan`。用户要求只读、先讨论或仅重写时，明确传递这个限制；本入口不是旧版的操作系统级只读重写沙箱。
 
-需要历史时阅读 [references/history.md](references/history.md)，将用户给出的聊天 ID、关键词、项目或归档范围交给 Gemini。沿用现有只读 `local-codex-context`，服务名不同可用 `--history-server`。历史工具不是普通对话的必需依赖；服务未就绪时说明缺失范围，不声称已经读取。
+模型依次取本次 `--model`、会话已有模型、技能目录个人 `model.txt`、agy 当前模型。脚本在发送前校验 Gemini 模型名，使用订阅登录，关闭额外 AI 点数，不改用户的全局模型选择。
 
-## 重撰已有回答
+## Codex 历史
 
-把用户需求、已核实的结果和 GPT 完整原答交给只读入口：
+本次 Gemini 主 agent 自带 `codex-history` 只读工具，由技能内 `history.py` 提供。它使用 agy 原生 MCP 通信，但不依赖 `local-codex-context` 或任何已安装插件；配置只放在本次会话目录。
 
-```sh
-python3 "$SKILL_DIR/scripts/rewrite.py" --workspace "$PROJECT_DIR" \
-  --receipt "$TURN_RECEIPT" <<'REPLY'
-## 用户需求
-原始问题、后续修正和交付要求
-## 已核实的结果
-改动、关键输出、结论和仍待验证的事项
-## 原稿
-完整回答
-REPLY
-```
+需要查历史时，将用户给出的 ID、关键词或项目范围交给 Gemini。默认涵盖本机各项目、普通和归档会话及所有来源；正文搜索不局限于标题。长消息和搜索结果可继续分页。详细能力、文件格式和边界见 [references/history.md](references/history.md)。
 
-此入口在 macOS 只读沙箱中运行，只按需查询项目原件；无项目用 `--no-project`。`--artifact 文件` 附上工作区文件，`--verbatim 文本` 检查已核实原文是否保留，`--model` 指定本次 Gemini。结构化材料用 `--packet 文件.json`，字段为 `request`、`draft`，可选 `results`、`artifacts`、`verbatim`。
+默认历史位置为 `CODEX_HOME`，未设置时使用 `~/.codex`。可在首轮用 `--codex-home` 指定本地数据目录，或用 `--no-history` 不加载内置历史工具。不要把整个历史库复制到提示词；按用户任务查询。其他设备或云端尚未落盘的内容不可凭空读取。
 
-核对事实、数值和链接。有出入时，将具体证据和修订要求交回 Gemini 定稿，然后逐字发送标准输出中的正文。失败或仍无法核实时，说明原因，并将使用的 GPT 原稿明确标出。
+## 返回结果与处理失败
+
+成功后原样发送标准输出中的 Gemini 正文。用户委托项目操作时，结合回执工具结果和项目现场核对完成情况。标准错误是诊断信息，不属于 Gemini 正文。
+
+会话目录内：`session.json` 保存续谈配置，`turns/0001.json` 等保存每轮工具状态、参数、输出、错误和最终回复，旁边的 `.txt` 是原始回复。不要把这些个人运行数据提交到公开仓库。
+
+退出码为零不等于任务已完成；检查权限拒绝、工具错误和 Gemini 的说明。中断、失败或超时后先看最新回执及已发生的修改，再明确续做未完成部分。脚本不会自动重跑项目任务；续谈也不是事务回滚。

@@ -1,69 +1,77 @@
-# 通过 agy 调用 Gemini 订阅
+# call-gemini-agy-subscription
 
-通过本机已登录的 Google Antigravity CLI（`agy`）转达问题或项目任务，将 Gemini 的实际回复原样带回 Codex。支持连续追问、项目文件修改与测试、按需查询 Codex 历史，也保留原来的只读重撰功能。
+在 Codex 中直接使用订阅版 Gemini：GPT 转达你的问题或项目任务，Antigravity CLI 执行，再把 Gemini 的原始回复带回当前聊天。支持连续协作、项目文件读写与命令执行，以及跨项目查询本机保存的 Codex 历史。
 
-## 安装与使用
+这是独立技能。不需要旧版重写技能、`local-codex-context` 插件、独立桥接项目或常驻服务。
 
-需要 Python 3.9+ 和已登录的官方 `agy`，本项目在 macOS 验证；只读重撰依赖 macOS 的 `sandbox-exec`。将完整的 `call-gemini-agy-subscription` 目录放入 `~/.codex/skills/`，或将该位置链接到源码目录，不要只复制单个脚本。[Antigravity CLI 安装与登录](https://antigravity.google/docs/getting-started?tab=cli)
+## 安装
 
-技能显示名为「调用 Gemini 订阅（agy）」，保留显式调用策略。在 Codex 中选择它，或输入：
-
-```text
-$call-gemini-agy-subscription 让 Gemini 看看这个项目，先解释失败原因。
-```
-
-之后可以说「继续让它按刚才的方案修复并跑测试」。明确说「用 Gemini 重写上条回复」，或在完整回复后单独发送技能名，会使用只读重撰入口。
-
-两个入口都按 `--model`、技能根目录的 `model.txt`、CLI 当前选择依次决定模型，并在发送消息前确认是 Gemini。用 `agy models` 查看可用标识。仅使用 Google 账号订阅，设置 `modelProvider=""`、`useG1Credits=false`，不在额度耗尽后改用额外 AI 点数。[官方设置说明](https://antigravity.google/docs/settings?tab=cli)
-
-## 脚本调用
-
-假定下列变量是已存在的绝对目录，`RUN_DIR` 是当前 Codex 聊天专属的回执目录。每轮文件名须唯一。
+需要 macOS 或 Linux、Python 3.10+，以及已安装并登录订阅账号的官方 `agy`。将本仓库放到 Codex 技能目录：
 
 ```sh
-python3 "$SKILL_DIR/scripts/relay.py" --workspace "$PROJECT_DIR" \
-  --receipt "$RUN_DIR/turn-01.json" <<'MESSAGE'
-请说明这个项目的入口在哪里，先不要修改文件。
+git clone https://github.com/ye-kaifan/call-gemini-agy-subscription.git   ~/.codex/skills/call-gemini-agy-subscription
+```
+
+也可解压分发 ZIP，将其中同名目录放到 `~/.codex/skills/`。使用自定义 `CODEX_HOME` 时放到它的 `skills/` 下。本技能保持显式调用，不自动介入普通任务。
+
+## 在 Codex 中使用
+
+```text
+$call-gemini-agy-subscription 让 Gemini 看一下当前项目，查查我以前对这个问题的讨论，再给出修改建议。
+```
+
+接着说“继续让 Gemini 按方案修改并跑测试”，Codex 就会沿用同一个 Gemini 会话。也可以直接问问题，或要求它重写一段回答，不需要先由 GPT 作答。
+
+## 脚本入口
+
+```sh
+python3 scripts/call.py --session /path/to/private-session   --workspace /path/to/project <<'MESSAGE'
+查阅项目和相关 Codex 历史，解释测试失败的原因。
 MESSAGE
 
-python3 "$SKILL_DIR/scripts/relay.py" --workspace "$PROJECT_DIR" \
-  --resume-receipt "$RUN_DIR/turn-01.json" --receipt "$RUN_DIR/turn-02.json" <<'MESSAGE'
-继续结合入口函数举个例子。
+python3 scripts/call.py --session /path/to/private-session <<'MESSAGE'
+继续修复并运行测试。
 MESSAGE
 ```
 
-纯聊天用 `--no-project`。`--resume-receipt` 核对原工作区和历史服务，并沿用模型与执行模式；`--conversation ID` 保留兼容，但不具备事前工作区校验。换项目或独立话题应新开对话，同一 Gemini 会话顺序执行。
+一个专属目录对应一个 Gemini 会话，保存会话 ID、设置和逐轮回执；同一目录禁止并发。新的项目或话题使用新目录。首次纯聊天使用 `--no-project`。不要把会话目录放进公开提交中。
 
-默认 `--execution-mode auto`，采用官方自动权限评估，终端首先在沙箱内运行。可选 `accept-edits` 保留仅自动编辑项目和执行沙箱内命令的行为。无界面模式无法弹出确认；被权限策略拒绝的工具可能伴随整轮成功状态返回。脚本保留这些诊断，不将其转化为“任务已完成”。[执行模式与无界面权限](https://antigravity.google/docs/cli/headless/) · [终端沙箱](https://antigravity.google/docs/sandbox?tab=cli)
+| 参数 | 作用 |
+| --- | --- |
+| `--session DIR` | 必需；首次创建，后续自动续谈 |
+| `--workspace DIR` | 首次默认当前目录；续谈沿用原项目 |
+| `--no-project` | 首次无项目聊天 |
+| `--model ID` | 本次指定订阅 Gemini 模型 |
+| `--execution-mode auto/accept-edits/plan` | 首次默认 `auto`；后续沿用 |
+| `--codex-home DIR` | 历史目录；默认 `CODEX_HOME` 或 `~/.codex` |
+| `--no-history` | 首次不加载内置历史工具 |
+| `--timeout SECONDS` | 整轮时限，默认 600 秒 |
 
-重撰命令为 `scripts/rewrite.py`，支持 `--workspace`/`--no-project`、`--model`、`--artifact`、`--verbatim`、`--packet` 和 `--receipt`。输入格式与工作流程见 [SKILL.md](SKILL.md)。默认时限：转达 600 秒、重撰 240 秒，均包含模型准备。
+模型选择顺序：本次参数、当前会话已选模型、本地 `model.txt`、agy 当前选择。`model.txt` 可选，不进入 Git 或分发包。调用使用订阅登录并关闭额外 AI 点数。
 
-## 回执、失败与历史依赖
+## 不依赖插件的历史读取
 
-标准输出只含 `result.response` 的 UTF-8 原文，诊断和续谈 ID 写入标准错误。`--receipt` 在调用前预留新文件，以当前用户独占读写权限原子更新；保存会话、实际配置、工具状态/参数/输出/错误、CLI 诊断和最终回复。检查失败、超时或中断后的回执和已修改文件，再决定续做哪一步；脚本不自动重跑项目操作。强制杀死进程或断电只能保留此前已经写入的检查点。
+`history.py` 直接只读查询 Codex 的本地 SQLite 索引和历史正文，并提供列表、全文关键词搜索、按 ID 读取及分页。默认包含全部项目、普通和归档会话、子代理等来源。支持旧 JSONL、压缩 JSONL 和新版 SQLite 分页历史。
 
-项目协作拥有指定工作区内的读写和命令执行能力，仍受 CLI、操作系统及宿主权限约束。只读重撰维持独立沙箱，禁止修改项目或执行项目命令。发出的消息和模型实际读取的材料会进入 Google 上下文；回执可能包含这些内容，不应放入公共仓库。
+agy 原生项目 agent 从本次会话目录加载这段代码，以 MCP stdio 传递查询。MCP 是这里的通信协议，不是另一个需要安装的插件；该进程随调用启动和结束。配置仅写入 `--session` 指定目录，再通过 `--add-dir` 加入工作区。项目自身的配置照常生效，本技能运行所需的历史能力全部来自随包代码。
 
-历史查询依赖另行安装的只读 `local-codex-context` MCP 服务；服务名可由 `--history-server` 指定。支持范围、普通/归档定位、旧格式漏检和分页见 [历史读取说明](references/history.md)。其他机器安装本技能后，还需单独接通该服务。未配置历史服务不影响普通对话。
+普通 JSONL 和 SQLite 只需 Python 标准库。压缩 JSONL 需要 Python 3.14 的 `compression.zstd`、`zstandard` 模块或 `zstd` 命令之一；缺少解码器时会明确报出未覆盖范围。其他设备、纯云端或已删除记录不在本机读取范围。[详细说明](references/history.md)
+
+实现使用 agy 官方的 [MCP 工作区配置](https://antigravity.google/docs/mcp/)。项目操作使用其[执行模式](https://antigravity.google/docs/cli/modes/)，并保留 CLI 自身的权限处理。
+
+## 回执与失败恢复
+
+标准输出只含 Gemini 最终原文；诊断走标准错误。`session.json` 保存续谈配置，`turns/` 中逐轮保存 JSON 回执和原始回复。回执包含模型、会话 ID、工具状态、输入参数、输出及错误。
+
+`SUCCESS` 仅说明 CLI 返回成功，项目任务是否完成应核对工具结果。被拒绝、超时或中断后先检查回执和已修改文件，再续做剩余步骤；脚本不自动重试项目任务。`auto` 的可用性取决于 agy 版本、账号与平台，实际降级会保留在诊断中。
 
 ## 验证与打包
 
-在技能根目录运行离线回归，不调用 Google：
-
 ```sh
 python3 -B -m unittest discover -s tests -v
-```
-
-macOS 上在允许启动 Seatbelt 的宿主环境中，连同真实只读策略一起验收：
-
-```sh
-RUN_MACOS_SANDBOX_TESTS=1 python3 -B -m unittest discover -s tests -v
-```
-
-本机维护使用 `/opt/anaconda3/bin/python -B`。真实 CLI 测试使用虚构项目和会话，与离线回归分开记录。
-
-```sh
 python3 -B scripts/build_package.py
 ```
 
-该命令在技能目录旁生成 ZIP，按维护清单收录源码、说明和测试，核对内容与文件权限；不收录 `model.txt`、回执、日志、Git 元数据和缓存。
+测试只使用合成历史与模拟 CLI，涵盖长消息分页、全文搜索、归档、压缩历史、源数据只读、会话续谈、并发锁、错误回执和中断回收。真实调用使用虚构项目另行验证，不把用户聊天或账号信息作为验收材料。
+
+新版统一入口是 `scripts/call.py`；旧的 `relay.py`、`rewrite.py` 和重写专用沙箱已移除。旧版本保留在 Git 历史中，不再为旧参数维持重复实现。

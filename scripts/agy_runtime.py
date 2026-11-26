@@ -90,7 +90,7 @@ def project_directory(path):
     codex_home = Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex").resolve()
     if (not root.is_dir() or root in (Path(root.anchor), Path.home().resolve())
             or codex_home.is_relative_to(root) or root.is_relative_to(codex_home)):
-        raise ValueError("--workspace 须指向具体项目，Codex 历史通过只读服务查询；纯对话用 --no-project")
+        raise ValueError("--workspace 须指向具体项目，Codex 历史由内置读取器查询；纯对话用 --no-project")
     return root
 
 
@@ -151,6 +151,11 @@ def stop_process(proc):
         os.killpg(proc.pid, signal.SIGKILL)
     except ProcessLookupError:
         pass
+    except PermissionError:
+        # macOS sandboxing can report EPERM for a group whose child just exited.
+        # Do not mask the actual CLI failure with that cleanup race.
+        if proc.poll() is None:
+            raise
 
 
 @contextmanager
@@ -203,9 +208,9 @@ def run_turn(args, prompt, review_dir, env, timeout, *, trace=None, checkpoint=N
                 ident = str(UUID(ident))
             except ValueError:
                 raise ValueError("agy 返回了无效的会话 ID") from None
-            trace["conversation_id"] = ident
             if expected_conversation and ident != expected_conversation:
                 raise ValueError("agy 返回的会话 ID 与预期不符，请核查回执和项目现场")
+            trace["conversation_id"] = ident
         if kind == "init":
             init = data
             trace["init"] = init
